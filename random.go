@@ -1,10 +1,10 @@
 package wavefunctioncollapse
 
 import (
-	"math/rand"
+// "math/rand"
 )
 
-func randomIndice(array []int, r int) int {
+func randomIndice(array []int, r float64) int {
 	sum := 0
 
 	for n := range array {

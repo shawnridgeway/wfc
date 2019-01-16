@@ -1,115 +1,124 @@
 package wavefunctioncollapse
 
 import (
+	"image"
 	"math"
 )
 
-type Model struct {
-	initiliazedField, generationComplete bool
-	wave [][][]bool
-	changes [][]bool
-	stationary Pattern
-	t int
-	periodic bool
-	fmx, fmy int
+type ConcreteModel interface {
+	OnBoundary(x, y int) bool
+	Propagate() bool
+	Clear()
+	Graphics() *image.Image
 }
 
-type RandNumGen func(array []int, r int) int
+type Model struct {
+	ConcreteModel
+	initiliazedField, generationComplete bool
+	wave                                 [][][]bool
+	changes                              [][]bool
+	stationary                           Pattern
+	t                                    int
+	periodic                             bool
+	fmx, fmy                             int
+}
 
-type ObservationResult bool | nil
+type RandNumGen func() float64
 
 /**
- * 
+ * observe
+ * returns: completed (bool), success (bool)
  */
-func (model *Model) observe(rng RandNumGen) ObservationResult {
-	min := 1000
-    argminx := -1
-    argminy := -1
-    distribution := make([]int, model.t)
+func (model *Model) observe(rng RandNumGen) (bool, bool) {
+	min := 1000.0
+	argminx := -1
+	argminy := -1
+	distribution := make([]int, model.t)
 
-    for x := 0; x < model.fmx; x++ {
-    	wavex := &model.wave[x]
-    	for y := 0; y < model.fmy; y++ {
-    		if model.onBoundary(x, y) {
-    			continue
-    		}
+	for x := 0; x < model.fmx; x++ {
+		wavex := model.wave[x]
+		for y := 0; y < model.fmy; y++ {
+			if model.OnBoundary(x, y) {
+				continue
+			}
 
-    		sum := 0
+			sum := 0
 
-    		for t := 0; t < model.t; t++ {
-    			if wavex[y][t] {
-    				distribution[t] = model.stationary[t]
-    			} else {
-    				distribution[t] = 0
-    			}
-                sum += distribution[t]
-    		}
+			for t := 0; t < model.t; t++ {
+				if wavex[y][t] {
+					distribution[t] = model.stationary[t]
+				} else {
+					distribution[t] = 0
+				}
+				sum += distribution[t]
+			}
 
-    		if sum == 0 {
-    			return false
-    		}
+			if sum == 0 {
+				return true, false
+			}
 
-    		for t := 0; t < model.t; t++ {
-    			distribution[t] /= sum
-    		}
+			for t := 0; t < model.t; t++ {
+				distribution[t] /= sum
+			}
 
-    		entropy := 0
+			entropy := 0.0
 
-    		for i := 0; i < len(distribution); i++ {
-    			if distribution[i] > 0 {
-    				entropy += -distribution[i] * math.Log(distribution[i])
-    			}
-    		}
+			for i := 0; i < len(distribution); i++ {
+				if distribution[i] > 0 {
+					entropy += -float64(distribution[i]) * math.Log(float64(distribution[i]))
+				}
+			}
 
-    		noise := 0.000001 * rng()
+			noise := 0.000001 * rng()
 
-    		if entropy > 0 && entropy + noise < min {
-    			min = entropy + noise
-    			argminx = x
-    			argminy = y
-    		}
-    	}
-    }
+			if entropy > 0 && entropy+noise < min {
+				min = entropy + noise
+				argminx = x
+				argminy = y
+			}
+		}
+	}
 
-    if argminx == -1 && argminy == -1 {
-    	return true
-    }
+	if argminx == -1 && argminy == -1 {
+		return true, true
+	}
 
-    for t := 0; t < model.t; t++ {
-    	if model.wave[argminx][argminy][t] {
-    		distribution[t] =  model.stationary[t]
-    	} else {
-    		distribution[t] = 0
-    	}
-    }
+	for t := 0; t < model.t; t++ {
+		if model.wave[argminx][argminy][t] {
+			distribution[t] = model.stationary[t]
+		} else {
+			distribution[t] = 0
+		}
+	}
 
-    r := randomIndice(distribution, rng())
+	r := randomIndice(distribution, rng())
 
-    for t := 0; t < model.t; t++ {
-    	model.wave[argminx][argminy][t] = (t == r)
-    }
+	for t := 0; t < model.t; t++ {
+		model.wave[argminx][argminy][t] = (t == r)
+	}
 
-    model.changes[argminx][argminy] = true
+	model.changes[argminx][argminy] = true
 
-    return nil
+	return false, false
 }
 
 /**
  * Execute a single iteration
+ * returns: completed (bool), success (bool)
  */
-func (model *Model) singleIteration(rng RandNumGen) ObservationResult {
-	result := model.observe(rng)
+func (model *Model) singleIteration(rng RandNumGen) (bool, bool) {
+	completed, success := model.observe(rng)
 
-	if rng != nil {
-		model.generationComplete = result
-		return result
+	if completed {
+		model.generationComplete = success
+		return true, success
 	}
 
-	for model.propagate() {
+	for model.Propagate() {
 		// Empty loop
 	}
 
-    return nil
+	return false, false
 }
 
 /**
@@ -120,24 +129,14 @@ func (model *Model) Iterate(iterations int, rng RandNumGen) bool {
 		model.Clear()
 	}
 
- 	for i := 0; i < iterations || iterations == 0; i++ {
- 		result := model.singleIteration(rng)
- 		if result != nil {
- 			return result
- 		}
- 	}
+	for i := 0; i < iterations || iterations == 0; i++ {
+		completed, success := model.singleIteration(rng)
+		if completed {
+			return success
+		}
+	}
 
- 	return true
-}
-
-func (model *Model) Iterate(iterations int) bool {
-	rand.Seed(time.Now().UnixNano())
-	rng := rand.Float64
-	return model.Generate(iterations, rng)
-}
-
-func (model *Model) Iterate() bool {
-	return model.Generate(0)
+	return true
 }
 
 /**
@@ -146,17 +145,11 @@ func (model *Model) Iterate() bool {
 func (model *Model) Generate(rng RandNumGen) bool {
 	model.Clear()
 	for {
-		result := model.singleIteration(rng)
-		if result != nil {
-			return result
+		completed, success := model.singleIteration(rng)
+		if completed {
+			return success
 		}
 	}
-}
-
-func (model *Model) Generate() bool {
-	rand.Seed(time.Now().UnixNano())
-	rng := rand.Float64
-	return model.Generate(rng)
 }
 
 /**
@@ -171,7 +164,7 @@ func (model *Model) IsGenerationComplete() bool {
  */
 func (model *Model) Clear() {
 	for x := 0; x < model.fmx; x++ {
-		for y := 0; y < model.fmy; y++ {		
+		for y := 0; y < model.fmy; y++ {
 			for t := 0; t < model.t; t++ {
 				model.wave[x][y][t] = true
 			}
@@ -179,6 +172,6 @@ func (model *Model) Clear() {
 		}
 	}
 	model.initiliazedField = true
-    model.generationComplete = false
+	model.generationComplete = false
+	model.ConcreteModel.Clear()
 }
-
