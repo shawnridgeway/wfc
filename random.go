@@ -27,7 +27,7 @@ func randomIndice(array []int, r float64) int {
 
 	for i < len(array) {
 		x += array[i]
-		if r <= x {
+		if r <= float64(x) {
 			return i
 		}
 		i++
