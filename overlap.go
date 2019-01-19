@@ -291,7 +291,7 @@ func (model *OverlappingModel) Propagate() bool {
 							sy -= model.Fmy
 						}
 
-						if !model.Periodic && (sx > model.Fmxmn || sy > model.Fmymn) {
+						if !model.Periodic && (sx > model.Fmx || sy > model.Fmy) {
 							continue
 						}
 
@@ -406,14 +406,19 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 				}
 			}
 
+			var uR, uG, uB, uA uint8
 			if contributorNumber == 0 {
-				panic("Error rendering incomplete graphic")
+				uR = 0
+				uG = 0
+				uB = 0
+				uA = 255
+			} else {
+				uR = uint8((r / contributorNumber) >> 24)
+				uG = uint8((g / contributorNumber) >> 24)
+				uB = uint8((b / contributorNumber) >> 24)
+				uA = uint8((a / contributorNumber) >> 24)
 			}
 
-			uR := uint8((r / contributorNumber) >> 24)
-			uG := uint8((g / contributorNumber) >> 24)
-			uB := uint8((b / contributorNumber) >> 24)
-			uA := uint8((a / contributorNumber) >> 24)
 			output[y][x] = color.RGBA{uR, uG, uB, uA}
 		}
 	}
