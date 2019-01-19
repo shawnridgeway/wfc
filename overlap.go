@@ -14,7 +14,7 @@ type OverlappingModel struct {
 	*BaseModel                 // Underlying model of generic Wave Function Collapse algorithm
 	N            int           // Size of patterns (ie pixel distance of influencing pixels)
 	Colors       []color.Color // Array of unique colors in input
-	Ground       int           //
+	Ground       int           // Id of the specific pattern to use as the bottom of the generation (see https://github.com/mxgmn/WaveFunctionCollapse/issues/3#issuecomment-250995366)
 	Patterns     []Pattern     // Array of unique patterns in input
 	Propagator   [][][][]int   // Table of which patterns (t2) mathch a given pattern (t1) at offset (dx, dy) [t1][dx][dy][t2]
 	Fmxmn, Fmymn int           // Width and height of output, minus n
@@ -26,7 +26,16 @@ type OverlappingModel struct {
 type Pattern []int
 
 /**
- * Constructor
+ * NewOverlappingModel
+ * @param {image.Image} img The source image
+ * @param {int} N Size of the patterns
+ * @param {int} width The width of the generated image
+ * @param {int} height The height of the generated image
+ * @param {bool} periodicInput Whether the source image is to be considered as periodic / as a repeatable texture
+ * @param {bool} periodicOutput Whether the generation should be periodic / a repeatable texture
+ * @param {int} symmetry Allowed symmetries from 1 (no symmetry) to 8 (all mirrored / rotated variations)
+ * @param {int} [ground=0] Id of the specific pattern to use as the bottom of the generation ( see https://github.com/mxgmn/WaveFunctionCollapse/issues/3#issuecomment-250995366 )
+ * @returns *OverlappingModel A pointer to a new copy of the model
  */
 func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry, ground int) *OverlappingModel {
 
@@ -315,11 +324,11 @@ func (model *OverlappingModel) Propagate() bool {
 }
 
 /**
- * Clear the internal state
+ * Clear the internal state, then set ground pattern
  */
 func (model *OverlappingModel) Clear() {
 	model.ClearBase(model)
-	if model.Ground != 0 {
+	if model.Ground != -1 {
 		for x := 0; x < model.Fmx; x++ {
 			for t := 0; t < model.T; t++ {
 				if t != model.Ground {
@@ -367,6 +376,7 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
 			contributorNumber, r, g, b, a = 0, 0, 0, 0, 0
+
 			for dy := 0; dy < model.N; dy++ {
 				for dx := 0; dx < model.N; dx++ {
 					sx := x - dx
@@ -394,6 +404,10 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 						}
 					}
 				}
+			}
+
+			if contributorNumber == 0 {
+				panic("Error rendering incomplete graphic")
 			}
 
 			uR := uint8((r / contributorNumber) >> 24)

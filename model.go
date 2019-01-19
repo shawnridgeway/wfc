@@ -1,6 +1,7 @@
 package wavefunctioncollapse
 
 import (
+    // "fmt"
     "image"
     "math"
 )
@@ -37,8 +38,9 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
     min := 1000.0
     argminx := -1
     argminy := -1
-    distribution := make([]int, baseModel.T)
+    distribution := make([]float64, baseModel.T)
 
+    // Find the point with minimum entropy (adding a little noise for randomness)
     for x := 0; x < baseModel.Fmx; x++ {
         wavex := baseModel.Wave[x]
         for y := 0; y < baseModel.Fmy; y++ {
@@ -46,18 +48,18 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
                 continue
             }
 
-            sum := 0
+            sum := 0.0
 
             for t := 0; t < baseModel.T; t++ {
                 if wavex[y][t] {
-                    distribution[t] = baseModel.Stationary[t]
+                    distribution[t] = float64(baseModel.Stationary[t])
                 } else {
-                    distribution[t] = 0
+                    distribution[t] = 0.0
                 }
                 sum += distribution[t]
             }
 
-            if sum == 0 {
+            if sum == 0.0 {
                 return true, false
             }
 
@@ -68,8 +70,8 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
             entropy := 0.0
 
             for i := 0; i < len(distribution); i++ {
-                if distribution[i] > 0 {
-                    entropy += -float64(distribution[i]) * math.Log(float64(distribution[i]))
+                if distribution[i] > 0.0 {
+                    entropy += -distribution[i] * math.Log(distribution[i])
                 }
             }
 
@@ -89,9 +91,9 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
 
     for t := 0; t < baseModel.T; t++ {
         if baseModel.Wave[argminx][argminy][t] {
-            distribution[t] = baseModel.Stationary[t]
+            distribution[t] = float64(baseModel.Stationary[t])
         } else {
-            distribution[t] = 0
+            distribution[t] = 0.0
         }
     }
 
