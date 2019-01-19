@@ -14,7 +14,7 @@ type OverlappingModel struct {
 	*BaseModel                 // Underlying model of generic Wave Function Collapse algorithm
 	N            int           // Size of patterns (ie pixel distance of influencing pixels)
 	Colors       []color.Color // Array of unique colors in input
-	Ground       int           // Id of the specific pattern to use as the bottom of the generation (see https://github.com/mxgmn/WaveFunctionCollapse/issues/3#issuecomment-250995366)
+	Ground       int           // Id of the specific pattern to use as the bottom of the generation. A value of -1 means that this is unset
 	Patterns     []Pattern     // Array of unique patterns in input
 	Propagator   [][][][]int   // Table of which patterns (t2) mathch a given pattern (t1) at offset (dx, dy) [t1][dx][dy][t2]
 	Fmxmn, Fmymn int           // Width and height of output, minus n
@@ -37,7 +37,7 @@ type Pattern []int
  * @param {int} [ground=0] Id of the specific pattern to use as the bottom of the generation ( see https://github.com/mxgmn/WaveFunctionCollapse/issues/3#issuecomment-250995366 )
  * @returns *OverlappingModel A pointer to a new copy of the model
  */
-func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry, ground int) *OverlappingModel {
+func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry int, ground bool) *OverlappingModel {
 
 	// Initialize model
 	model := &OverlappingModel{BaseModel: &BaseModel{}}
@@ -45,7 +45,7 @@ func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, p
 	model.Fmx = width
 	model.Fmy = height
 	model.Periodic = periodicOutput
-	model.Ground = ground
+	model.Ground = -1
 
 	bounds := img.Bounds()
 	dataWidth := bounds.Max.X
@@ -158,6 +158,10 @@ func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, p
 			ps[7] = reflect(ps[6])
 			for k := 0; k < symmetry; k++ {
 				ind := indexFromPattern(ps[k])
+				if ground && y == verticalBound-1 && x == 0 && k == 0 {
+					// Set groung pattern
+					model.Ground = len(weightsKeys)
+				}
 				if _, ok := weights[ind]; ok {
 					weights[ind]++
 				} else {
@@ -428,8 +432,20 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 /**
  * Retrieve the RGBA data
  */
-func (model *OverlappingModel) Generate(rng RandNumGen) (image.Image, bool) {
-	model.Rng = rng
+func (model *OverlappingModel) Iterate(iterations int) (image.Image, bool) {
+	model.BaseModel.Iterate(model, iterations)
+
+	if model.IsGenerationComplete(model) {
+		return model.NewCompleteImage(), true
+	} else {
+		return model.NewIncompleteImage(), false
+	}
+}
+
+/**
+ * Retrieve the RGBA data
+ */
+func (model *OverlappingModel) Generate() (image.Image, bool) {
 	model.BaseModel.Generate(model)
 
 	if model.IsGenerationComplete(model) {

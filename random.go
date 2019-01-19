@@ -1,9 +1,5 @@
 package wavefunctioncollapse
 
-import (
-// "math/rand"
-)
-
 func randomIndice(array []float64, r float64) int {
 	sum := 0.0
 

@@ -4,13 +4,20 @@ import (
     // "fmt"
     "image"
     "math"
+    "math/rand"
+    "time"
 )
 
+type Iterator interface {
+    Iterate(iterations int) (image.Image, bool)
+}
+
 type Generator interface {
-    Generate(rand RandNumGen) (image.Image, bool)
+    Generate() (image.Image, bool)
 }
 
 type AppliedAlgorithm interface {
+    Iterator
     Generator
     OnBoundary(x, y int) bool
     Propagate() bool
@@ -135,7 +142,7 @@ func (baseModel *BaseModel) Iterate(specificModel AppliedAlgorithm, iterations i
         specificModel.Clear()
     }
 
-    for i := 0; i < iterations || iterations == 0; i++ {
+    for i := 0; i < iterations; i++ {
         completed, success := baseModel.SingleIteration(specificModel)
         if completed {
             return success
@@ -177,6 +184,7 @@ func (baseModel *BaseModel) ClearBase(specificModel AppliedAlgorithm) {
             baseModel.Changes[x][y] = false
         }
     }
+    baseModel.Rng = rand.New(rand.NewSource(time.Now().UnixNano())).Float64
     baseModel.InitiliazedField = true
     baseModel.GenerationComplete = false
 }
