@@ -9,7 +9,7 @@ import (
 )
 
 type Iterator interface {
-    Iterate(iterations int) (image.Image, bool)
+    Iterate(iterations int) (image.Image, bool, bool)
 }
 
 type Generator interface {
@@ -25,23 +25,22 @@ type AppliedAlgorithm interface {
 }
 
 type BaseModel struct {
-    InitiliazedField, GenerationComplete bool       // Flags for status
-    Wave                                 [][][]bool // All possible patterns (t) that could fit coordinates (x, y)
-    Changes                              [][]bool   // Changes made in interation of propagation
-    Stationary                           []int      // Array of weights (by frequency) for each pattern (matches index in patterns field)
-    T                                    int        // Count of patterns
-    Periodic                             bool       // Output is periodic (ie tessellates)
-    Fmx, Fmy                             int        // Width and height of output
-    Rng                                  RandNumGen // Random number generator supplied at generation time
+    InitiliazedField     bool           // Generation Initialized
+    GenerationSuccessful bool           // Generation has run into a contradiction
+    Wave                 [][][]bool     // All possible patterns (t) that could fit coordinates (x, y)
+    Changes              [][]bool       // Changes made in interation of propagation
+    Stationary           []int          // Array of weights (by frequency) for each pattern (matches index in patterns field)
+    T                    int            // Count of patterns
+    Periodic             bool           // Output is periodic (ie tessellates)
+    Fmx, Fmy             int            // Width and height of output
+    Rng                  func() float64 // Random number generator supplied at generation time
 }
-
-type RandNumGen func() float64
 
 /**
  * Observe
- * returns: completed (bool), success (bool)
+ * returns: finished (bool)
  */
-func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool) {
+func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) bool {
     min := 1000.0
     argminx := -1
     argminy := -1
@@ -49,7 +48,6 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
 
     // Find the point with minimum entropy (adding a little noise for randomness)
     for x := 0; x < baseModel.Fmx; x++ {
-        wavex := baseModel.Wave[x]
         for y := 0; y < baseModel.Fmy; y++ {
             if specificModel.OnBoundary(x, y) {
                 continue
@@ -58,7 +56,7 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
             sum := 0.0
 
             for t := 0; t < baseModel.T; t++ {
-                if wavex[y][t] {
+                if baseModel.Wave[x][y][t] {
                     distribution[t] = float64(baseModel.Stationary[t])
                 } else {
                     distribution[t] = 0.0
@@ -67,7 +65,8 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
             }
 
             if sum == 0.0 {
-                return true, false
+                baseModel.GenerationSuccessful = false
+                return true // finished, unsuccessful
             }
 
             for t := 0; t < baseModel.T; t++ {
@@ -93,7 +92,8 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
     }
 
     if argminx == -1 && argminy == -1 {
-        return true, true
+        baseModel.GenerationSuccessful = true
+        return true // finished, successful
     }
 
     for t := 0; t < baseModel.T; t++ {
@@ -112,30 +112,29 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) (bool, bool)
 
     baseModel.Changes[argminx][argminy] = true
 
-    return false, false
+    return false // Not finished yet
 }
 
 /**
  * Execute a single iteration
- * returns: completed (bool), success (bool)
+ * returns: finished (bool)
  */
-func (baseModel *BaseModel) SingleIteration(specificModel AppliedAlgorithm) (bool, bool) {
-    completed, success := baseModel.Observe(specificModel)
+func (baseModel *BaseModel) SingleIteration(specificModel AppliedAlgorithm) bool {
+    finished := baseModel.Observe(specificModel)
 
-    if completed {
-        baseModel.GenerationComplete = success
-        return true, success
+    if finished {
+        return true
     }
 
     for specificModel.Propagate() {
         // Empty loop
     }
 
-    return false, false
+    return false // Not finished yet
 }
 
 /**
- * Execute a fixed number of iterations. Stop when the generation is successful or reaches a contradiction.
+ * Execute a fixed number of iterations. Stop when the generation succeedes or fails.
  */
 func (baseModel *BaseModel) Iterate(specificModel AppliedAlgorithm, iterations int) bool {
     if !baseModel.InitiliazedField {
@@ -143,33 +142,39 @@ func (baseModel *BaseModel) Iterate(specificModel AppliedAlgorithm, iterations i
     }
 
     for i := 0; i < iterations; i++ {
-        completed, success := baseModel.SingleIteration(specificModel)
-        if completed {
-            return success
+        finished := baseModel.SingleIteration(specificModel)
+        if finished {
+            return true
         }
     }
-
-    return true
+    return false // Not finished yet
 }
 
 /**
- * Execute a complete new generation
+ * Execute a complete new generation until success or failure.
  */
-func (baseModel *BaseModel) Generate(specificModel AppliedAlgorithm) bool {
+func (baseModel *BaseModel) Generate(specificModel AppliedAlgorithm) {
     specificModel.Clear()
     for {
-        completed, success := baseModel.SingleIteration(specificModel)
-        if completed {
-            return success
+        finished := baseModel.SingleIteration(specificModel)
+        if finished {
+            return
         }
     }
 }
 
 /**
- * Check whether the previous generation completed successfully
+ * Check whether the generation completed successfully
  */
-func (baseModel *BaseModel) IsGenerationComplete(specificModel AppliedAlgorithm) bool {
-    return baseModel.GenerationComplete
+func (baseModel *BaseModel) IsGenerationSuccessful() bool {
+    return baseModel.GenerationSuccessful
+}
+
+/**
+ * Set the seed for the random number generator. Useful for a stable testing environment.
+ */
+func (baseModel *BaseModel) SetSeed(seed float64) {
+    baseModel.Rng = rand.New(rand.NewSource(seed)).Float64
 }
 
 /**
@@ -186,5 +191,5 @@ func (baseModel *BaseModel) ClearBase(specificModel AppliedAlgorithm) {
     }
     baseModel.Rng = rand.New(rand.NewSource(time.Now().UnixNano())).Float64
     baseModel.InitiliazedField = true
-    baseModel.GenerationComplete = false
+    baseModel.GenerationSuccessful = false
 }

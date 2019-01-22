@@ -357,7 +357,7 @@ func (model *OverlappingModel) Clear() {
 /**
  * Create a GeneratedImage holding the data for a complete image
  */
-func (model *OverlappingModel) NewCompleteImage() GeneratedImage {
+func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
 	output := make([][]color.Color, model.Fmy)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmx)
@@ -377,7 +377,7 @@ func (model *OverlappingModel) NewCompleteImage() GeneratedImage {
 /**
  * Create a GeneratedImage holding the data for an incomplete image
  */
-func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
+func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
 	output := make([][]color.Color, model.Fmy)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmx)
@@ -418,9 +418,9 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 
 			var uR, uG, uB, uA uint8
 			if contributorNumber == 0 {
-				uR = 0
-				uG = 0
-				uB = 0
+				uR = 127
+				uG = 127
+				uB = 127
 				uA = 255
 			} else {
 				uR = uint8((sR / contributorNumber) >> 8)
@@ -437,26 +437,30 @@ func (model *OverlappingModel) NewIncompleteImage() GeneratedImage {
 
 /**
  * Retrieve the RGBA data
+ * returns: Image
  */
-func (model *OverlappingModel) Iterate(iterations int) (image.Image, bool) {
-	model.BaseModel.Iterate(model, iterations)
-
-	if model.IsGenerationComplete(model) {
-		return model.NewCompleteImage(), true
+func (model *OverlappingModel) RenderImage() GeneratedImage {
+	if model.IsGenerationSuccessful() {
+		return model.RenderCompleteImage()
 	} else {
-		return model.NewIncompleteImage(), false
+		return model.RenderIncompleteImage()
 	}
 }
 
 /**
  * Retrieve the RGBA data
+ * returns: Image, finished, successful
+ */
+func (model *OverlappingModel) Iterate(iterations int) (image.Image, bool, bool) {
+	finished := model.BaseModel.Iterate(model, iterations)
+	return model.RenderImage(), finished, model.IsGenerationSuccessful()
+}
+
+/**
+ * Retrieve the RGBA data
+ * returns: Image, successful
  */
 func (model *OverlappingModel) Generate() (image.Image, bool) {
 	model.BaseModel.Generate(model)
-
-	if model.IsGenerationComplete(model) {
-		return model.NewCompleteImage(), true
-	} else {
-		return model.NewIncompleteImage(), false
-	}
+	return model.RenderImage(), model.IsGenerationSuccessful()
 }
