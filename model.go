@@ -37,6 +37,11 @@ type BaseModel struct {
 }
 
 /**
+ * Pattern Type. Flattened array of color codes.
+ */
+type Pattern []int
+
+/**
  * Observe
  * returns: finished (bool)
  */

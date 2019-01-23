@@ -7,8 +7,7 @@ import (
 
 // General struct for common functionality between CompleteImage and IncompleteImage
 type GeneratedImage struct {
-	*OverlappingModel                 // Underlying model
-	Output            [][]color.Color // Output to render
+	data [][]color.Color // data to render
 }
 
 func (gi GeneratedImage) ColorModel() color.Model {
@@ -16,9 +15,12 @@ func (gi GeneratedImage) ColorModel() color.Model {
 }
 
 func (gi GeneratedImage) Bounds() image.Rectangle {
-	return image.Rect(0, 0, gi.Fmx, gi.Fmy)
+	if len(gi.data) < 1 {
+		return image.Rect(0, 0, 0, 0)
+	}
+	return image.Rect(0, 0, len(gi.data[0]), len(gi.data))
 }
 
 func (gi GeneratedImage) At(x, y int) color.Color {
-	return gi.Output[y][x]
+	return gi.data[y][x]
 }

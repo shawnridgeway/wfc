@@ -21,11 +21,6 @@ type OverlappingModel struct {
 }
 
 /**
- * Pattern Type
- */
-type Pattern []int
-
-/**
  * NewOverlappingModel
  * @param {image.Image} img The source image
  * @param {int} N Size of the patterns
@@ -35,7 +30,7 @@ type Pattern []int
  * @param {bool} periodicOutput Whether the generation should be periodic / a repeatable texture
  * @param {int} symmetry Allowed symmetries from 1 (no symmetry) to 8 (all mirrored / rotated variations)
  * @param {int} [ground=0] Id of the specific pattern to use as the bottom of the generation ( see https://github.com/mxgmn/WaveFunctionCollapse/issues/3#issuecomment-250995366 )
- * @returns *OverlappingModel A pointer to a new copy of the model
+ * @return *OverlappingModel A pointer to a new copy of the model
  */
 func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry int, ground bool) *OverlappingModel {
 
@@ -365,13 +360,13 @@ func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
 			for t := 0; t < model.T; t++ {
-				if val := model.Wave[x][y][t]; val {
+				if model.Wave[x][y][t] {
 					output[y][x] = model.Colors[model.Patterns[t][0]]
 				}
 			}
 		}
 	}
-	return GeneratedImage{OverlappingModel: model, Output: output}
+	return GeneratedImage{output}
 }
 
 /**
@@ -416,23 +411,18 @@ func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
 				}
 			}
 
-			var uR, uG, uB, uA uint8
 			if contributorNumber == 0 {
-				uR = 127
-				uG = 127
-				uB = 127
-				uA = 255
+				output[y][x] = color.RGBA{127, 127, 127, 255}
 			} else {
-				uR = uint8((sR / contributorNumber) >> 8)
-				uG = uint8((sG / contributorNumber) >> 8)
-				uB = uint8((sB / contributorNumber) >> 8)
-				uA = uint8((sA / contributorNumber) >> 8)
+				uR := uint8((sR / contributorNumber) >> 8)
+				uG := uint8((sG / contributorNumber) >> 8)
+				uB := uint8((sB / contributorNumber) >> 8)
+				uA := uint8((sA / contributorNumber) >> 8)
+				output[y][x] = color.RGBA{uR, uG, uB, uA}
 			}
-
-			output[y][x] = color.RGBA{uR, uG, uB, uA}
 		}
 	}
-	return GeneratedImage{OverlappingModel: model, Output: output}
+	return GeneratedImage{output}
 }
 
 /**
