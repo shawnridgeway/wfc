@@ -21,6 +21,11 @@ type OverlappingModel struct {
 }
 
 /**
+ * Pattern Type. Flattened array of color codes.
+ */
+type Pattern []int
+
+/**
  * NewOverlappingModel
  * @param {image.Image} img The source image
  * @param {int} N Size of the patterns
@@ -171,11 +176,11 @@ func NewOverlappingModel(img image.Image, n, width, height int, periodicInput, p
 
 	// Store the patterns and cooresponding weights (stationary)
 	model.Patterns = make([]Pattern, model.T)
-	model.Stationary = make([]int, model.T)
+	model.Stationary = make([]float64, model.T)
 	model.Propagator = make([][][][]int, model.T)
 	for i, wk := range weightsKeys {
 		model.Patterns[i] = patternFromIndex(wk)
-		model.Stationary[i] = weights[wk]
+		model.Stationary[i] = float64(weights[wk])
 	}
 
 	// Initialize wave (to all true) and changes (to all false) fields
@@ -353,15 +358,15 @@ func (model *OverlappingModel) Clear() {
  * Create a GeneratedImage holding the data for a complete image
  */
 func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmy)
+	output := make([][]color.Color, model.Fmx)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmx)
+		output[i] = make([]color.Color, model.Fmy)
 	}
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
 			for t := 0; t < model.T; t++ {
 				if model.Wave[x][y][t] {
-					output[y][x] = model.Colors[model.Patterns[t][0]]
+					output[x][y] = model.Colors[model.Patterns[t][0]]
 				}
 			}
 		}
@@ -373,9 +378,9 @@ func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
  * Create a GeneratedImage holding the data for an incomplete image
  */
 func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmy)
+	output := make([][]color.Color, model.Fmx)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmx)
+		output[i] = make([]color.Color, model.Fmy)
 	}
 	var contributorNumber, sR, sG, sB, sA uint32
 	for y := 0; y < model.Fmy; y++ {
@@ -412,13 +417,13 @@ func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
 			}
 
 			if contributorNumber == 0 {
-				output[y][x] = color.RGBA{127, 127, 127, 255}
+				output[x][y] = color.RGBA{127, 127, 127, 255}
 			} else {
 				uR := uint8((sR / contributorNumber) >> 8)
 				uG := uint8((sG / contributorNumber) >> 8)
 				uB := uint8((sB / contributorNumber) >> 8)
 				uA := uint8((sA / contributorNumber) >> 8)
-				output[y][x] = color.RGBA{uR, uG, uB, uA}
+				output[x][y] = color.RGBA{uR, uG, uB, uA}
 			}
 		}
 	}

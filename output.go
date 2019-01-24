@@ -22,5 +22,5 @@ func (gi GeneratedImage) Bounds() image.Rectangle {
 }
 
 func (gi GeneratedImage) At(x, y int) color.Color {
-	return gi.data[y][x]
+	return gi.data[x][y]
 }

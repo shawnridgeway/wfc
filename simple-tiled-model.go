@@ -1,58 +1,60 @@
 package wavefunctioncollapse
 
 import (
-	"fmt"
+	// "fmt"
+	"image"
+	"image/color"
 )
 
 /**
  * SimpleTiledModel Type
  */
 type SimpleTiledModel struct {
-	*BaseModel            // Underlying model of generic Wave Function Collapse algorithm
-	TileSize   int        //
-	Tiles      []Tile     //
-	Propogator [][][]bool //
+	*BaseModel               // Underlying model of generic Wave Function Collapse algorithm
+	TileSize   int           // The size in pixels of the length and height of each tile
+	Tiles      []TilePattern // List of all possible tiles as images, including inversions
+	Propagator [][][]bool    // All possible connections between tiles
 }
 
 // Parsed data supplied by user
 type SimpleTiledData struct {
-	Path      string
-	Unique    bool // Default to false
-	TileSize  int  // Default to 16
-	Subsets   map[string][]Tile
-	Tiles     []Tile
-	Neighbors []Neighbor
+	Unique    bool       // False if each tile can have variants. (Default to false?)
+	TileSize  int        // Default to 16
+	Tiles     []Tile     // List of all possible tiles, not including inversions
+	Neighbors []Neighbor // List of possible connections between tiles
 }
 
 // Raw information on a tile
 type Tile struct {
-	Name     string
-	Symmetry string  // Default to ""
-	Weight   float64 // Default to 1
-	Bitmap   []int
+	Name     string        // Name used to identify the tile
+	Symmetry string        // Default to ""
+	Weight   float64       // Default to 1
+	Variants []image.Image // Preloaded image for the tile
 }
 
 // Information on which tiles can be neighbors
 type Neighbor struct {
-	Left     string
-	LeftNum  int // Default to 0
-	Right    string
-	RightNum int // Default to 0
+	Left     string // Mathces Tile.Name
+	LeftNum  int    // Default to 0
+	Right    string // Mathces Tile.Name
+	RightNum int    // Default to 0
 }
+
+// Flat array of colors in a tile
+type TilePattern []color.Color
 
 // Tile inversion function type
 type Inversion func(int) int
 
 /**
  * NewSimpleTiledModel
- * @param {object} data Tiles, subset and constraints definitions
- * @param {string} subsetName Name of the subset to use from the data, use all tiles if falsy
- * @param {int} width The width of the generation
- * @param {int} height The height of the generation
+ * @param {object} data Tiles and constraints definitions
+ * @param {int} width The width of the generation, in terms of tiles (not pixels)
+ * @param {int} height The height of the generation, in terms of tiles (not pixels)
  * @param {bool} periodic Whether the source image is to be considered as periodic / as a repeatable texture
  * @return *SimpleTiledModel A pointer to a new copy of the model
  */
-func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height int, periodic bool) *SimpleTiledModel {
+func NewSimpleTiledModel(data SimpleTiledData, width, height int, periodic bool) *SimpleTiledModel {
 
 	// Initialize model
 	model := &SimpleTiledModel{BaseModel: &BaseModel{}}
@@ -60,18 +62,14 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 	model.Fmy = height
 	model.Periodic = periodic
 	model.TileSize = data.TileSize
-	model.Tiles = make([]Tile)
-	model.Stationary = make([]int)
+	model.Tiles = make([]TilePattern, 0)
+	model.Stationary = make([]float64, 0)
 
-	//
-	firstOccurrence := make(map[string]bool)
+	firstOccurrence := make(map[string]int)
 	action := make([][]int, 0)
-	hasSubset := false
-	subset := make([]string)
-	subset, hasSubset = data.Subsets[subsetName]
 
-	tile := func(transformer func(x, y int) Tile) {
-		result := make([]int, model.TileSize*model.TileSize)
+	tile := func(transformer func(x, y int) color.Color) TilePattern {
+		result := make(TilePattern, model.TileSize*model.TileSize)
 		for y := 0; y < model.TileSize; y++ {
 			for x := 0; x < model.TileSize; x++ {
 				result[x+y*model.TileSize] = transformer(x, y)
@@ -80,9 +78,9 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 		return result
 	}
 
-	rotate := func(array []int) {
-		return tile(func(x, y int) Tile {
-			return array[model.TileSize-1-y+x*model.TileSize]
+	rotate := func(p TilePattern) TilePattern {
+		return tile(func(x, y int) color.Color {
+			return p[model.TileSize-1-y+x*model.TileSize]
 		})
 	}
 
@@ -90,12 +88,6 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 		currentTile := data.Tiles[i]
 		var cardinality int
 		var inversion1, inversion2 Inversion
-
-		if hasSubset {
-			if _, ok := subset[currentTile.name]; !ok {
-				continue
-			}
-		}
 
 		switch currentTile.Symmetry {
 		case "L":
@@ -155,7 +147,7 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 		}
 
 		model.T = len(action)
-		firstOccurrence[currentTile.name] = model.T
+		firstOccurrence[currentTile.Name] = model.T
 
 		for t := 0; t < cardinality; t++ {
 			action = append(action, []int{
@@ -172,25 +164,15 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 
 		if data.Unique {
 			for t := 0; t < cardinality; t++ {
-				bitmap := currentTile.Bitmap[t]
-				model.Tiles = append(model.Tiles, tile(func(x, y int) int {
-					return []int{
-						bitmap[(model.TileSize*y+x)*4],
-						bitmap[(model.TileSize*y+x)*4+1],
-						bitmap[(model.TileSize*y+x)*4+2],
-						bitmap[(model.TileSize*y+x)*4+3],
-					}
+				img := currentTile.Variants[t]
+				model.Tiles = append(model.Tiles, tile(func(x, y int) color.Color {
+					return img.At(x, y)
 				}))
 			}
 		} else {
-			bitmap := currentTile.Bitmap[t]
-			model.Tiles = append(model.Tiles, tile(func(x, y int) int {
-				return []int{
-					bitmap[(model.TileSize*y+x)*4],
-					bitmap[(model.TileSize*y+x)*4+1],
-					bitmap[(model.TileSize*y+x)*4+2],
-					bitmap[(model.TileSize*y+x)*4+3],
-				}
+			img := currentTile.Variants[0]
+			model.Tiles = append(model.Tiles, tile(func(x, y int) color.Color {
+				return img.At(x, y)
 			}))
 
 			for t := 1; t < cardinality; t++ {
@@ -204,14 +186,14 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 	}
 
 	model.T = len(action)
-	model.Propogator = make([][][]bool, 4)
+	model.Propagator = make([][][]bool, 4)
 
 	for i := 0; i < 4; i++ {
-		model.Propogator[i] = make([][]bool, model.T)
+		model.Propagator[i] = make([][]bool, model.T)
 		for t := 0; t < model.T; t++ {
-			model.Propogator[i][t] = make([]bool, model.T)
+			model.Propagator[i][t] = make([]bool, model.T)
 			for t2 := 0; t2 < model.T; t2++ {
-				model.Propogator[i][t][t2] = false
+				model.Propagator[i][t][t2] = false
 			}
 		}
 	}
@@ -227,15 +209,7 @@ func NewSimpleTiledModel(data SimpleTiledData, subsetName string, width, height 
 	}
 
 	for i := 0; i < len(data.Neighbors); i++ {
-		neighbor = data.Neighbors[i]
-
-		if hasSubset {
-			_, hasLeft := subset[neighbor.Left]
-			_, hasRight := subset[neighbor.Right]
-			if !hasLeft || !hasRight {
-				continue
-			}
-		}
+		neighbor := data.Neighbors[i]
 
 		l := action[firstOccurrence[neighbor.Left]][neighbor.LeftNum]
 		d := action[l][1]
@@ -335,7 +309,7 @@ func (model *SimpleTiledModel) Propagate() bool {
 
 						for t1 := 0; t1 < model.T && !b; t1++ {
 							if model.Wave[x1][y1][t1] {
-								b = model.Propogator[d][t2][t1]
+								b = model.Propagator[d][t2][t1]
 							}
 						}
 
@@ -364,9 +338,9 @@ func (model *SimpleTiledModel) Clear() {
  * Create a GeneratedImage holding the data for a complete image
  */
 func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmy)
+	output := make([][]color.Color, model.Fmx)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmx)
+		output[i] = make([]color.Color, model.Fmy)
 	}
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
@@ -374,7 +348,7 @@ func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
 				for xt := 0; xt < model.TileSize; xt++ {
 					for t := 0; t < model.T; t++ {
 						if model.Wave[x][y][t] {
-							output[y*model.TileSize+yt][x*model.TileSize+xt] = model.Tiles[t][yt*model.TileSize+xt]
+							output[x*model.TileSize+xt][y*model.TileSize+yt] = model.Tiles[t][yt*model.TileSize+xt]
 							break
 						}
 					}
@@ -389,14 +363,14 @@ func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
  * Create a GeneratedImage holding the data for an incomplete image
  */
 func (model *SimpleTiledModel) RenderIncompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmy)
+	output := make([][]color.Color, model.Fmx)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmx)
+		output[i] = make([]color.Color, model.Fmy)
 	}
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
 			amount := 0
-			sum := 0
+			sum := 0.0
 			for t := 0; t < len(model.Wave[x][y]); t++ {
 				if model.Wave[x][y][t] {
 					amount += 1
@@ -406,23 +380,23 @@ func (model *SimpleTiledModel) RenderIncompleteImage() GeneratedImage {
 			for yt := 0; yt < model.TileSize; yt++ {
 				for xt := 0; xt < model.TileSize; xt++ {
 					if amount == model.T {
-						output[y*model.TileSize+yt][x*model.TileSize+xt] = color.RGBA{127, 127, 127, 255}
+						output[x*model.TileSize+xt][y*model.TileSize+yt] = color.RGBA{127, 127, 127, 255}
 					} else {
-						sR, sG, sB, sA := 0, 0, 0, 0
+						sR, sG, sB, sA := 0.0, 0.0, 0.0, 0.0
 						for t := 0; t < model.T; t++ {
 							if model.Wave[x][y][t] {
-								r, g, b, a := model.Tiles[t][yt*model.TileSize+xt]
-								sR += r * model.Stationary[t]
-								sG += g * model.Stationary[t]
-								sB += b * model.Stationary[t]
-								sA += a * model.Stationary[t]
+								r, g, b, a := model.Tiles[t][yt*model.TileSize+xt].RGBA()
+								sR += float64(r) * model.Stationary[t]
+								sG += float64(g) * model.Stationary[t]
+								sB += float64(b) * model.Stationary[t]
+								sA += float64(a) * model.Stationary[t]
 							}
 						}
-						uR := uint8((sR / sum) >> 8)
-						uG := uint8((sG / sum) >> 8)
-						uB := uint8((sB / sum) >> 8)
-						uA := uint8((sA / sum) >> 8)
-						output[y*model.TileSize+yt][x*model.TileSize+xt] = color.RGBA{uR, uG, uB, uA}
+						uR := uint8(int(sR/sum) >> 8)
+						uG := uint8(int(sG/sum) >> 8)
+						uB := uint8(int(sB/sum) >> 8)
+						uA := uint8(int(sA/sum) >> 8)
+						output[x*model.TileSize+xt][y*model.TileSize+yt] = color.RGBA{uR, uG, uB, uA}
 					}
 				}
 			}

@@ -29,17 +29,12 @@ type BaseModel struct {
     GenerationSuccessful bool           // Generation has run into a contradiction
     Wave                 [][][]bool     // All possible patterns (t) that could fit coordinates (x, y)
     Changes              [][]bool       // Changes made in interation of propagation
-    Stationary           []int          // Array of weights (by frequency) for each pattern (matches index in patterns field)
+    Stationary           []float64      // Array of weights (by frequency) for each pattern (matches index in patterns field)
     T                    int            // Count of patterns
     Periodic             bool           // Output is periodic (ie tessellates)
     Fmx, Fmy             int            // Width and height of output
     Rng                  func() float64 // Random number generator supplied at generation time
 }
-
-/**
- * Pattern Type. Flattened array of color codes.
- */
-type Pattern []int
 
 /**
  * Observe
@@ -62,7 +57,7 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) bool {
 
             for t := 0; t < baseModel.T; t++ {
                 if baseModel.Wave[x][y][t] {
-                    distribution[t] = float64(baseModel.Stationary[t])
+                    distribution[t] = baseModel.Stationary[t]
                 } else {
                     distribution[t] = 0.0
                 }
@@ -103,7 +98,7 @@ func (baseModel *BaseModel) Observe(specificModel AppliedAlgorithm) bool {
 
     for t := 0; t < baseModel.T; t++ {
         if baseModel.Wave[argminx][argminy][t] {
-            distribution[t] = float64(baseModel.Stationary[t])
+            distribution[t] = baseModel.Stationary[t]
         } else {
             distribution[t] = 0.0
         }
@@ -178,7 +173,7 @@ func (baseModel *BaseModel) IsGenerationSuccessful() bool {
 /**
  * Set the seed for the random number generator. Useful for a stable testing environment.
  */
-func (baseModel *BaseModel) SetSeed(seed float64) {
+func (baseModel *BaseModel) SetSeed(seed int64) {
     baseModel.Rng = rand.New(rand.NewSource(seed)).Float64
 }
 
