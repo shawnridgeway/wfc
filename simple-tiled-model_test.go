@@ -2,6 +2,7 @@ package wavefunctioncollapse
 
 import (
 	"encoding/json"
+	// "fmt"
 	"github.com/shawnridgeway/wavefunctioncollapse/internal/testutils"
 	"image"
 	"io/ioutil"
@@ -36,9 +37,9 @@ type RawNeighbor struct {
 func TestNewSimpleTiledModel(t *testing.T) {
 	dataFileName := "castle_data.json"
 	targetFileName := "castle.png"
-	periodic := true
-	width := 48
-	height := 48
+	periodic := false
+	width := 20
+	height := 20
 	seed := int64(42)
 
 	// Load data file
@@ -58,7 +59,7 @@ func TestNewSimpleTiledModel(t *testing.T) {
 	for i, rt := range rawData.Tiles {
 		imgs := make([]image.Image, 0)
 		if rawData.Unique {
-			i := 0
+			i := 1
 			for {
 				if img, err := testutils.LoadImage("internal/input/" + rawData.Path + rt.Name + " " + strconv.Itoa(i) + ".png"); err == nil {
 					imgs = append(imgs, img)
@@ -74,7 +75,11 @@ func TestNewSimpleTiledModel(t *testing.T) {
 			}
 			imgs = append(imgs, img)
 		}
-		tiles[i] = Tile{Name: rt.Name, Symmetry: rt.Symmetry, Weight: rt.Weight, Variants: imgs}
+		weight := rt.Weight
+		if weight == 0 {
+			weight = 1
+		}
+		tiles[i] = Tile{Name: rt.Name, Symmetry: rt.Symmetry, Weight: weight, Variants: imgs}
 	}
 	neighboors := make([]Neighbor, len(rawData.Neighbors))
 	for i, rn := range rawData.Neighbors {
@@ -83,32 +88,28 @@ func TestNewSimpleTiledModel(t *testing.T) {
 	data := SimpleTiledData{Unique: rawData.Unique, TileSize: rawData.TileSize, Tiles: tiles, Neighbors: neighboors}
 
 	// Create model
-	var outputImg image.Image
-	success := false
 	model := NewSimpleTiledModel(data, width, height, periodic)
 	model.SetSeed(seed)
-	for !success {
-		outputImg, success := model.Generate()
-	}
+	outputImg, success := model.Generate()
 	if !success {
 		t.Log("Failed to generate image on the first try.")
 		t.FailNow()
 	}
 
 	// Save output
-	err = testutils.SaveImage("internal/target/"+targetFileName, outputImg)
-	if err != nil {
-		panic(err)
-	}
+	// err = testutils.SaveImage("internal/target/"+targetFileName, outputImg)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// Test that files match
 	targetImg, err := testutils.LoadImage("internal/target/" + targetFileName)
 	if err != nil {
 		panic(err)
 	}
-	// areEqual := testutils.CompareImages(outputImg, targetImg)
-	// if !areEqual {
-	// 	t.Log("Output image is not the same as the target image.")
-	// 	t.FailNow()
-	// }
+	areEqual := testutils.CompareImages(outputImg, targetImg)
+	if !areEqual {
+		t.Log("Output image is not the same as the target image.")
+		t.FailNow()
+	}
 }

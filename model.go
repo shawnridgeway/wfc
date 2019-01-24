@@ -26,6 +26,7 @@ type AppliedAlgorithm interface {
 
 type BaseModel struct {
     InitiliazedField     bool           // Generation Initialized
+    RngSet               bool           // Random number generator set by user
     GenerationSuccessful bool           // Generation has run into a contradiction
     Wave                 [][][]bool     // All possible patterns (t) that could fit coordinates (x, y)
     Changes              [][]bool       // Changes made in interation of propagation
@@ -175,6 +176,7 @@ func (baseModel *BaseModel) IsGenerationSuccessful() bool {
  */
 func (baseModel *BaseModel) SetSeed(seed int64) {
     baseModel.Rng = rand.New(rand.NewSource(seed)).Float64
+    baseModel.RngSet = true
 }
 
 /**
@@ -189,7 +191,9 @@ func (baseModel *BaseModel) ClearBase(specificModel AppliedAlgorithm) {
             baseModel.Changes[x][y] = false
         }
     }
-    baseModel.Rng = rand.New(rand.NewSource(time.Now().UnixNano())).Float64
+    if !baseModel.RngSet {
+        baseModel.Rng = rand.New(rand.NewSource(time.Now().UnixNano())).Float64
+    }
     baseModel.InitiliazedField = true
     baseModel.GenerationSuccessful = false
 }

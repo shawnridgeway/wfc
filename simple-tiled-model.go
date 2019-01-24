@@ -338,9 +338,9 @@ func (model *SimpleTiledModel) Clear() {
  * Create a GeneratedImage holding the data for a complete image
  */
 func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmx)
+	output := make([][]color.Color, model.Fmx*model.TileSize)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmy)
+		output[i] = make([]color.Color, model.Fmy*model.TileSize)
 	}
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
@@ -363,9 +363,9 @@ func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
  * Create a GeneratedImage holding the data for an incomplete image
  */
 func (model *SimpleTiledModel) RenderIncompleteImage() GeneratedImage {
-	output := make([][]color.Color, model.Fmx)
+	output := make([][]color.Color, model.Fmx*model.TileSize)
 	for i := range output {
-		output[i] = make([]color.Color, model.Fmy)
+		output[i] = make([]color.Color, model.Fmy*model.TileSize)
 	}
 	for y := 0; y < model.Fmy; y++ {
 		for x := 0; x < model.Fmx; x++ {
