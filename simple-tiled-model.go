@@ -335,9 +335,9 @@ func (model *SimpleTiledModel) Clear() {
 }
 
 /**
- * Create a GeneratedImage holding the data for a complete image
+ * Create a image.Image holding the data for a complete image
  */
-func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
+func (model *SimpleTiledModel) RenderCompleteImage() image.Image {
 	output := make([][]color.Color, model.Fmx*model.TileSize)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmy*model.TileSize)
@@ -360,9 +360,9 @@ func (model *SimpleTiledModel) RenderCompleteImage() GeneratedImage {
 }
 
 /**
- * Create a GeneratedImage holding the data for an incomplete image
+ * Create a image.Image holding the data for an incomplete image
  */
-func (model *SimpleTiledModel) RenderIncompleteImage() GeneratedImage {
+func (model *SimpleTiledModel) RenderIncompleteImage() image.Image {
 	output := make([][]color.Color, model.Fmx*model.TileSize)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmy*model.TileSize)
@@ -409,7 +409,7 @@ func (model *SimpleTiledModel) RenderIncompleteImage() GeneratedImage {
  * Retrieve the RGBA data
  * returns: Image
  */
-func (model *SimpleTiledModel) RenderImage() GeneratedImage {
+func (model *SimpleTiledModel) Render() image.Image {
 	if model.IsGenerationSuccessful() {
 		return model.RenderCompleteImage()
 	} else {
@@ -423,7 +423,7 @@ func (model *SimpleTiledModel) RenderImage() GeneratedImage {
  */
 func (model *SimpleTiledModel) Iterate(iterations int) (image.Image, bool, bool) {
 	finished := model.BaseModel.Iterate(model, iterations)
-	return model.RenderImage(), finished, model.IsGenerationSuccessful()
+	return model.Render(), finished, model.IsGenerationSuccessful()
 }
 
 /**
@@ -432,5 +432,5 @@ func (model *SimpleTiledModel) Iterate(iterations int) (image.Image, bool, bool)
  */
 func (model *SimpleTiledModel) Generate() (image.Image, bool) {
 	model.BaseModel.Generate(model)
-	return model.RenderImage(), model.IsGenerationSuccessful()
+	return model.Render(), model.IsGenerationSuccessful()
 }

@@ -355,9 +355,9 @@ func (model *OverlappingModel) Clear() {
 }
 
 /**
- * Create a GeneratedImage holding the data for a complete image
+ * Create a image.Image holding the data for a complete image
  */
-func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
+func (model *OverlappingModel) RenderCompleteImage() image.Image {
 	output := make([][]color.Color, model.Fmx)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmy)
@@ -375,9 +375,9 @@ func (model *OverlappingModel) RenderCompleteImage() GeneratedImage {
 }
 
 /**
- * Create a GeneratedImage holding the data for an incomplete image
+ * Create a image.Image holding the data for an incomplete image
  */
-func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
+func (model *OverlappingModel) RenderIncompleteImage() image.Image {
 	output := make([][]color.Color, model.Fmx)
 	for i := range output {
 		output[i] = make([]color.Color, model.Fmy)
@@ -434,7 +434,7 @@ func (model *OverlappingModel) RenderIncompleteImage() GeneratedImage {
  * Retrieve the RGBA data
  * returns: Image
  */
-func (model *OverlappingModel) RenderImage() GeneratedImage {
+func (model *OverlappingModel) Render() image.Image {
 	if model.IsGenerationSuccessful() {
 		return model.RenderCompleteImage()
 	} else {
@@ -448,7 +448,7 @@ func (model *OverlappingModel) RenderImage() GeneratedImage {
  */
 func (model *OverlappingModel) Iterate(iterations int) (image.Image, bool, bool) {
 	finished := model.BaseModel.Iterate(model, iterations)
-	return model.RenderImage(), finished, model.IsGenerationSuccessful()
+	return model.Render(), finished, model.IsGenerationSuccessful()
 }
 
 /**
@@ -457,5 +457,5 @@ func (model *OverlappingModel) Iterate(iterations int) (image.Image, bool, bool)
  */
 func (model *OverlappingModel) Generate() (image.Image, bool) {
 	model.BaseModel.Generate(model)
-	return model.RenderImage(), model.IsGenerationSuccessful()
+	return model.Render(), model.IsGenerationSuccessful()
 }
