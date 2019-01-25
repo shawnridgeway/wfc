@@ -34,14 +34,7 @@ type RawNeighbor struct {
 	RightNum int    `json:"rightNum"` // Default to 0
 }
 
-func TestNewSimpleTiledModel(t *testing.T) {
-	dataFileName := "castle_data.json"
-	targetFileName := "castle.png"
-	periodic := false
-	width := 20
-	height := 20
-	seed := int64(42)
-
+func initiateData(dataFileName string) SimpleTiledData {
 	// Load data file
 	dataFile, err := ioutil.ReadFile("internal/input/" + dataFileName)
 	if err != nil {
@@ -85,31 +78,58 @@ func TestNewSimpleTiledModel(t *testing.T) {
 	for i, rn := range rawData.Neighbors {
 		neighboors[i] = Neighbor{Left: rn.Left, LeftNum: rn.LeftNum, Right: rn.Right, RightNum: rn.RightNum}
 	}
-	data := SimpleTiledData{Unique: rawData.Unique, TileSize: rawData.TileSize, Tiles: tiles, Neighbors: neighboors}
+	return SimpleTiledData{Unique: rawData.Unique, TileSize: rawData.TileSize, Tiles: tiles, Neighbors: neighboors}
+}
 
-	// Create model
+func simpleTiledTest(t *testing.T, dataFileName, snapshotFileName string, iterations int) {
+	// Set test parameters
+	periodic := false
+	width := 20
+	height := 20
+	seed := int64(42)
+	data := initiateData(dataFileName)
+
+	// Generate output image
+	var outputImg image.Image
+	success, finished := false, false
 	model := NewSimpleTiledModel(data, width, height, periodic)
 	model.SetSeed(seed)
-	outputImg, success := model.Generate()
-	if !success {
-		t.Log("Failed to generate image on the first try.")
-		t.FailNow()
+	if iterations == -1 {
+		outputImg, success = model.Generate()
+		if !success {
+			t.Log("Failed to generate image on the first try.")
+			t.FailNow()
+		}
+	} else {
+		outputImg, finished, _ = model.Iterate(iterations)
+		if finished {
+			t.Log("Test for incomplete state actually finished.")
+			t.FailNow()
+		}
 	}
 
 	// Save output
-	// err = testutils.SaveImage("internal/target/"+targetFileName, outputImg)
+	// err := testutils.SaveImage("internal/snapshots/"+snapshotFileName, outputImg)
 	// if err != nil {
 	// 	panic(err)
 	// }
 
 	// Test that files match
-	targetImg, err := testutils.LoadImage("internal/target/" + targetFileName)
+	snapshotImg, err := testutils.LoadImage("internal/snapshots/" + snapshotFileName)
 	if err != nil {
 		panic(err)
 	}
-	areEqual := testutils.CompareImages(outputImg, targetImg)
+	areEqual := testutils.CompareImages(outputImg, snapshotImg)
 	if !areEqual {
-		t.Log("Output image is not the same as the target image.")
+		t.Log("Output image is not the same as the snapshot image.")
 		t.FailNow()
 	}
+}
+
+func TestSimpleTiledGenerationCompletes(t *testing.T) {
+	simpleTiledTest(t, "castle_data.json", "castle.png", -1)
+}
+
+func TestSimpleTiledIterationIncomplete(t *testing.T) {
+	simpleTiledTest(t, "castle_data.json", "castle_incomplete.png", 5)
 }
