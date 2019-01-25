@@ -96,7 +96,7 @@ Accepts:
 Returns:
 - `image.Image`: the output image
 - `bool`: true if the algorithm finished and cannot iterate further.
-- `bool`: true if the generation was successful, false if a contradiction was encountered.
+- `bool`: true if the generation was successful, false if a contradiction was encountered or is not finished.
 
 #### Render
 Returns an `image.Image` of the output at its current state. This is often not necessary since both `Generate` and `Iterate` return the output image as well.
@@ -134,7 +134,7 @@ Accepts:
 ## Examples
 More example can be found in the test files included in the project.
 
-###Overlapping Model
+### Overlapping Model
 ```
 // Create a new model
 model := wavefunctioncollapse.NewOverlappingModel(inputImg, 3, 48, 48, true, true, 2, true)
@@ -146,7 +146,7 @@ outputImg, success := model.Generate()
 outputImg, finished, success := model.Iterate(i) 
 ```
 
-###Simple Tiled Model
+### Simple Tiled Model
 ```
 // Create a new model
 model := wavefunctioncollapse.NewSimpleTiledModel(data, 20, 20, false)
