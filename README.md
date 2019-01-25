@@ -160,3 +160,5 @@ outputImg, finished, success := model.Iterate(10)
 
 ## Credits
 This project was based off the JavaScript version by kchapelier ([https://github.com/kchapelier/wavefunctioncollapse](https://github.com/kchapelier/wavefunctioncollapse)) and the original version by ExUtumno ([https://github.com/mxgmn/WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse))
+
+All images are borrowed from the above two repositories, please refer to those repositories for limitations on usage and distribution.
