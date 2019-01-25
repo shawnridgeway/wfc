@@ -1,6 +1,7 @@
 # Wave Function Collapse
 Go port of the Wave Function Collapse algorithm originally created by ExUtumno [https://github.com/mxgmn/WaveFunctionCollapse](https://github.com/mxgmn/WaveFunctionCollapse)
 
+## Introduction
 The Wave Function Collapse algorithm is a random pattern generator based on methods found in quantum physics. A sample input of constraints is fed in along with desired output criteria, i.e. width, height, periodic. The algorithm begins by analyzing the input constraints and building a list of rules about how the patterns can fit together. The output is then created in a "superposed" state, in which each slot of the output contains all possible patterns. During the first iteration, a slot is selected semi-randomly and "observed", i.e. narrowed down to one randomly chosen pattern. The implications of this selection are then propagated to the slot's neighbors recursively, eliminating patterns that cannot exist in those slots given the constraints. This cycle of observe and propagate is then repeated until all slots have one patten choosen, or there is a contradiction in which a slot has zero possible patterns. 
 
 ![Input Image](/internal/input/flowers.png?raw=true "Input Image")
@@ -131,7 +132,9 @@ Accepts:
 - `seed int64`: seed value to feed to the random number generator.
 
 ## Examples
-Overlapping Model
+More example can be found in the test files included in the project.
+
+###Overlapping Model
 ```
 // Create a new model
 model := wavefunctioncollapse.NewOverlappingModel(inputImg, 3, 48, 48, true, true, 2, true)
@@ -143,7 +146,7 @@ outputImg, success := model.Generate()
 outputImg, finished, success := model.Iterate(i) 
 ```
 
-Simple Tiled Model
+###Simple Tiled Model
 ```
 // Create a new model
 model := wavefunctioncollapse.NewSimpleTiledModel(data, 20, 20, false)
