@@ -33,7 +33,7 @@ Each of the models has its own constructor, but all other methods are common to 
 
 ### Constructors
 #### Overlapping Model
-```
+```go
 NewOverlappingModel(inputImage image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry int, ground bool) *OverlappingModel
 ```
 Accepts:
@@ -50,7 +50,7 @@ Returns:
 - `*OverlappingModel`: a pointer to the newly constructed model
 
 ### Simple Tiled Model
-```
+```go
 NewSimpleTiledModel(data SimpleTiledData, width, height int, periodic bool) *SimpleTiledModel
 ```
 Accepts:
@@ -77,7 +77,7 @@ Returns:
 ### Common Methods
 #### Generate
 Run the algorithm until success or contradiction.
-```
+```go
 (model *Model) Generate() (image.Image, bool)
 ```
 
@@ -87,7 +87,7 @@ Returns:
 
 #### Iterate
 Run the algorithm through `iterations` number of generations, stopping at success or contradiction.
-```
+```go
 (model *Model) Iterate(iterations int) (image.Image, bool, bool)
 ```
 Accepts:
@@ -100,7 +100,7 @@ Returns:
 
 #### Render
 Returns an `image.Image` of the output at its current state. This is often not necessary since both `Generate` and `Iterate` return the output image as well.
-```
+```go
 (model *Model) Render() image.Image
 ```
 
@@ -109,7 +109,7 @@ Returns:
 
 #### IsGenerationSuccessful
 Returns true if the generation is finished and successful, i.e. has no contradiction.
-```
+```go
 (baseModel *Model) IsGenerationSuccessful() bool
 ```
 
@@ -118,13 +118,13 @@ Returns:
 
 #### Clear
 Clear the internal state of the algorithm for a new generation. Only necessary to call when using `Iterate` and the algorithm has not finished.
-```
+```go
 (model *Model) Clear()
 ```
 
 #### SetSeed
 Sets a stable seed for the random number generator. Unless this method is called, the model will use a seed based on the current time each time the model is reset. This method is mostly useful for creating a reproducable tests.
-```
+```go
 (baseModel *Model) SetSeed(seed int64)
 ```
 
@@ -135,27 +135,27 @@ Accepts:
 More example can be found in the test files included in the project.
 
 ### Overlapping Model
-```
+```go
 // Create a new model
 model := wavefunctioncollapse.NewOverlappingModel(inputImg, 3, 48, 48, true, true, 2, true)
 
 // Run the algorithm until success or contradiction
 outputImg, success := model.Generate() 
 
-// Run the algorithm i times, stopping at success or contradiction
-outputImg, finished, success := model.Iterate(i) 
+// Run the algorithm 10 times, stopping at success or contradiction
+outputImg, finished, success := model.Iterate(10) 
 ```
 
 ### Simple Tiled Model
-```
+```go
 // Create a new model
 model := wavefunctioncollapse.NewSimpleTiledModel(data, 20, 20, false)
 
 // Run the algorithm until success or contradiction
 outputImg, success := model.Generate() 
 
-// Run the algorithm i times, stopping at success or contradiction
-outputImg, finished, success := model.Iterate(i) 
+// Run the algorithm 10 times, stopping at success or contradiction
+outputImg, finished, success := model.Iterate(10) 
 ```
 
 ## Credits
