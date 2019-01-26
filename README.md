@@ -31,8 +31,7 @@ There are two models included in this project:
 
 Each of the models has its own constructor, but all other methods are common to the two models.
 
-### Constructors
-#### Overlapping Model
+### `NewOverlappingModel` Constructor
 ```go
 NewOverlappingModel(inputImage image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry int, ground bool) *OverlappingModel
 ```
@@ -49,7 +48,7 @@ Accepts:
 Returns:
 - `*OverlappingModel`: a pointer to the newly constructed model
 
-### Simple Tiled Model
+### `NewSimpleTiledModel` Constructor
 ```go
 NewSimpleTiledModel(data SimpleTiledData, width, height int, periodic bool) *SimpleTiledModel
 ```
@@ -74,8 +73,7 @@ Accepts:
 Returns:
 - `*SimpleTiledModel`: a pointer to the newly constructed model.
 
-### Common Methods
-#### Generate
+### `Generate`
 Run the algorithm until success or contradiction.
 ```go
 (model *Model) Generate() (image.Image, bool)
@@ -85,7 +83,7 @@ Returns:
 - `image.Image`: the output image.
 - `bool`: true if the generation was successful, false if a contradiction was encountered.
 
-#### Iterate
+### `Iterate`
 Run the algorithm through `iterations` number of generations, stopping at success or contradiction.
 ```go
 (model *Model) Iterate(iterations int) (image.Image, bool, bool)
@@ -98,7 +96,7 @@ Returns:
 - `bool`: true if the algorithm finished and cannot iterate further.
 - `bool`: true if the generation was successful, false if a contradiction was encountered or is not finished.
 
-#### Render
+### `Render`
 Returns an `image.Image` of the output at its current state. This is often not necessary since both `Generate` and `Iterate` return the output image as well.
 ```go
 (model *Model) Render() image.Image
@@ -107,7 +105,7 @@ Returns an `image.Image` of the output at its current state. This is often not n
 Returns:
 - `image.Image`: the output image at its current state.
 
-#### IsGenerationSuccessful
+### `IsGenerationSuccessful`
 Returns true if the generation is finished and successful, i.e. has no contradiction.
 ```go
 (baseModel *Model) IsGenerationSuccessful() bool
@@ -116,13 +114,13 @@ Returns true if the generation is finished and successful, i.e. has no contradic
 Returns:
 - `bool`: true if the generation is finished and successful, i.e. has no contradiction.
 
-#### Clear
+### `Clear`
 Clear the internal state of the algorithm for a new generation. Only necessary to call when using `Iterate` and the algorithm has not finished.
 ```go
 (model *Model) Clear()
 ```
 
-#### SetSeed
+### `SetSeed`
 Sets a stable seed for the random number generator. Unless this method is called, the model will use a seed based on the current time each time the model is reset. This method is mostly useful for creating a reproducable tests.
 ```go
 (baseModel *Model) SetSeed(seed int64)
