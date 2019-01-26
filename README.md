@@ -15,11 +15,11 @@ The Wave Function Collapse algorithm is a random pattern generator based on meth
 ## Installation
 The project can be fetched via Go's CLI with the following command.
 ```
-go get github.com/shawnridgeway/wavefunctioncollapse
+go get github.com/shawnridgeway/wfc
 ```
 Otherwise, the project can be imported with the following line.
 ```
-import "github.com/shawnridgeway/wavefunctioncollapse"
+import "github.com/shawnridgeway/wfc"
 ```
 
 ## Usage
@@ -137,7 +137,7 @@ More example can be found in the test files included in the project.
 ### Overlapping Model
 ```go
 // Create a new model
-model := wavefunctioncollapse.NewOverlappingModel(inputImg, 3, 48, 48, true, true, 2, true)
+model := wfc.NewOverlappingModel(inputImg, 3, 48, 48, true, true, 2, true)
 
 // Run the algorithm until success or contradiction
 outputImg, success := model.Generate() 
@@ -149,7 +149,7 @@ outputImg, finished, success := model.Iterate(10)
 ### Simple Tiled Model
 ```go
 // Create a new model
-model := wavefunctioncollapse.NewSimpleTiledModel(data, 20, 20, false)
+model := wfc.NewSimpleTiledModel(data, 20, 20, false)
 
 // Run the algorithm until success or contradiction
 outputImg, success := model.Generate() 
