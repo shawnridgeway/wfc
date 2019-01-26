@@ -31,7 +31,8 @@ There are two models included in this project:
 
 Each of the models has its own constructor, but all other methods are common to the two models.
 
-### `NewOverlappingModel` Constructor
+### `NewOverlappingModel`
+Constructor for a new OverlappingModel.
 ```go
 NewOverlappingModel(inputImage image.Image, n, width, height int, periodicInput, periodicOutput bool, symmetry int, ground bool) *OverlappingModel
 ```
@@ -48,7 +49,8 @@ Accepts:
 Returns:
 - `*OverlappingModel`: a pointer to the newly constructed model
 
-### `NewSimpleTiledModel` Constructor
+### `NewSimpleTiledModel`
+Constructor for a new SimpleTiledModel.
 ```go
 NewSimpleTiledModel(data SimpleTiledData, width, height int, periodic bool) *SimpleTiledModel
 ```
