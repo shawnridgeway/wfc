@@ -1,4 +1,4 @@
-package wavefunctioncollapse
+package wfc
 
 func randomIndice(array []float64, r float64) int {
 	sum := 0.0

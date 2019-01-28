@@ -1,9 +1,9 @@
-package wavefunctioncollapse
+package wfc
 
 import (
 	"encoding/json"
 	// "fmt"
-	"github.com/shawnridgeway/wavefunctioncollapse/internal/testutils"
+	"github.com/shawnridgeway/wfc/internal/testutils"
 	"image"
 	"io/ioutil"
 	"strconv"

@@ -1,7 +1,7 @@
-package wavefunctioncollapse
+package wfc
 
 import (
-	"github.com/shawnridgeway/wavefunctioncollapse/internal/testutils"
+	"github.com/shawnridgeway/wfc/internal/testutils"
 	"image"
 	"testing"
 )

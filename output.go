@@ -1,4 +1,4 @@
-package wavefunctioncollapse
+package wfc
 
 import (
 	"image"
